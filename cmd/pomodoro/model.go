@@ -1,13 +1,11 @@
 package main
 
 import (
-	"fmt"
-	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/progress"
+	tuitea "pomodoro/cmd/pomodoro/tui-tea"
+
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 type phase int
@@ -18,34 +16,7 @@ const (
 	phaseLongBreak
 )
 
-// fixed inner width of the panel (excluding border and padding)
-const panelWidth = 44
-
 type tickMsg time.Time
-
-// static styles (created once)
-var (
-	styleDim   = lipgloss.NewStyle().Foreground(lipgloss.Color("#555555"))
-	styleKey   = lipgloss.NewStyle().Foreground(lipgloss.Color("#EEEEEE")).Background(lipgloss.Color("#2A2A2A")).Padding(0, 1)
-	styleDesc  = lipgloss.NewStyle().Foreground(lipgloss.Color("#666666"))
-	styleNotif = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFD700")).Bold(true)
-
-	styleAccentWork  = lipgloss.NewStyle().Foreground(lipgloss.Color("#E05C5C")).Bold(true)
-	styleAccentShort = lipgloss.NewStyle().Foreground(lipgloss.Color("#4EC994")).Bold(true)
-	styleAccentLong  = lipgloss.NewStyle().Foreground(lipgloss.Color("#4EA8E0")).Bold(true)
-
-	colorWork  = lipgloss.Color("#E05C5C")
-	colorShort = lipgloss.Color("#4EC994")
-	colorLong  = lipgloss.Color("#4EA8E0")
-
-	shortcutsBar = lipgloss.JoinHorizontal(lipgloss.Top,
-		styleKey.Render("SPACE"), styleDesc.Render(" Start/Pause  "),
-		styleKey.Render("S"), styleDesc.Render(" Next session  "),
-		styleKey.Render("R"), styleDesc.Render(" Reset  "),
-		styleKey.Render("T"), styleDesc.Render(" Test sound  "),
-		styleKey.Render("Q"), styleDesc.Render(" Quit"),
-	)
-)
 
 type model struct {
 	cfg           Config
@@ -54,25 +25,20 @@ type model struct {
 	total         time.Duration
 	running       bool
 	pomodoroCount int
-	progress      progress.Model
 	width         int
 	height        int
 	notification  string
+	renderer      tuitea.Renderer
 }
 
-func newModel(cfg Config) model {
-	p := progress.New(
-		progress.WithDefaultGradient(),
-		progress.WithoutPercentage(),
-		progress.WithWidth(panelWidth-4),
-	)
+func newModel(cfg Config, r tuitea.Renderer) model {
 	total := time.Duration(cfg.WorkDuration) * time.Minute
 	return model{
 		cfg:       cfg,
 		phase:     phaseWork,
 		remaining: total,
 		total:     total,
-		progress:  p,
+		renderer:  r,
 	}
 }
 
@@ -185,154 +151,36 @@ func (m model) autoStart() bool {
 	return m.cfg.AutoStartBreaks
 }
 
-func (m model) accent() lipgloss.Style {
+func (m model) uiPhase() tuitea.Phase {
 	switch m.phase {
 	case phaseShortBreak:
-		return styleAccentShort
+		return tuitea.PhaseShortBreak
 	case phaseLongBreak:
-		return styleAccentLong
+		return tuitea.PhaseLongBreak
 	}
-	return styleAccentWork
+	return tuitea.PhaseWork
 }
 
-func (m model) color() lipgloss.Color {
-	switch m.phase {
-	case phaseShortBreak:
-		return colorShort
-	case phaseLongBreak:
-		return colorLong
+func (m model) state() tuitea.State {
+	return tuitea.State{
+		Phase:                    m.uiPhase(),
+		Remaining:                m.remaining,
+		Total:                    m.total,
+		Running:                  m.running,
+		PomodoroCount:            m.pomodoroCount,
+		Notification:             m.notification,
+		Width:                    m.width,
+		Height:                   m.height,
+		PomodorosBeforeLongBreak: m.cfg.PomodorosBeforeLongBreak,
+		LongBreak:                m.cfg.LongBreak,
+		WorkLabel:                m.cfg.WorkLabel,
+		ShortBreakLabel:          m.cfg.ShortBreakLabel,
+		LongBreakLabel:           m.cfg.LongBreakLabel,
 	}
-	return colorWork
-}
-
-func (m model) phaseLabel() string {
-	switch m.phase {
-	case phaseWork:
-		return m.cfg.WorkLabel
-	case phaseShortBreak:
-		return m.cfg.ShortBreakLabel
-	case phaseLongBreak:
-		return m.cfg.LongBreakLabel
-	}
-	return ""
 }
 
 func (m model) View() string {
-	if m.width == 0 {
-		return "Loading..."
-	}
-
-	ac := m.accent()
-	col := m.color()
-
-	cp := func(s string) string {
-		return lipgloss.PlaceHorizontal(panelWidth, lipgloss.Center, s)
-	}
-
-	// Title
-	title := ac.Render("🍅  POMODORO TIMER")
-
-	// Phase + dots
-	phaseIcon := "⚡"
-	if m.phase != phaseWork {
-		phaseIcon = "☕"
-	}
-	phaseLine := ac.Render(phaseIcon + "  " + strings.ToUpper(m.phaseLabel()))
-
-	total := m.cfg.PomodorosBeforeLongBreak
-	done := m.pomodoroCount % total
-	var dotsBuf strings.Builder
-	for i := 0; i < total; i++ {
-		if i > 0 {
-			dotsBuf.WriteString("  ")
-		}
-		if i < done {
-			dotsBuf.WriteString(ac.Render("◆"))
-		} else {
-			dotsBuf.WriteString(styleDim.Render("◇"))
-		}
-	}
-	cycleStr := styleDim.Render(fmt.Sprintf("   cycle %d", (m.pomodoroCount/total)+1))
-	dotsLine := dotsBuf.String() + cycleStr
-
-	// Clock
-	mins := int(m.remaining.Minutes())
-	secs := int(m.remaining.Seconds()) % 60
-	bigRows := renderBigTime(fmt.Sprintf("%02d:%02d", mins, secs))
-
-	// Progress bar
-	var pct float64
-	if m.total > 0 {
-		pct = float64(m.total-m.remaining) / float64(m.total)
-	}
-	progressBar := m.progress.ViewAs(pct)
-
-	// Status
-	var statusLine string
-	if m.running {
-		statusLine = ac.Render("▶  Running")
-	} else {
-		statusLine = styleDim.Render("⏸  Paused")
-	}
-
-	// Next break info
-	nextInfo := ""
-	if m.phase == phaseWork {
-		if m.pomodoroCount > 0 && m.pomodoroCount%total == 0 {
-			nextInfo = styleDim.Render(fmt.Sprintf("→  long break (%dm)", m.cfg.LongBreak))
-		} else {
-			left := total - (m.pomodoroCount % total)
-			nextInfo = styleDim.Render(fmt.Sprintf("→  long break in %d pomodoro(s)", left))
-		}
-	}
-
-	// Notification
-	notif := ""
-	if m.notification != "" {
-		notif = styleNotif.Render("✦  " + m.notification)
-	}
-
-	// Panel content
-	divider := styleDim.Render(strings.Repeat("╌", panelWidth-2))
-
-	rows := []string{
-		cp(title),
-		cp(divider),
-		"",
-		cp(phaseLine),
-		cp(dotsLine),
-		"",
-	}
-	for _, row := range bigRows {
-		rows = append(rows, cp(ac.Render(row)))
-	}
-	rows = append(rows, "")
-	rows = append(rows, cp(progressBar))
-	rows = append(rows, "")
-	rows = append(rows, cp(statusLine))
-	if nextInfo != "" {
-		rows = append(rows, cp(nextInfo))
-	}
-	if notif != "" {
-		rows = append(rows, "")
-		rows = append(rows, cp(notif))
-	}
-
-	panel := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(col).
-		Padding(1, 2).
-		Width(panelWidth).
-		Render(strings.Join(rows, "\n"))
-
-	// Final assembly
-	block := lipgloss.JoinVertical(lipgloss.Center,
-		panel,
-		"",
-		shortcutsBar,
-	)
-
-	return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, block)
+	return m.renderer.Render(m.state())
 }
 
 func clamp(v, lo, hi int) int {
