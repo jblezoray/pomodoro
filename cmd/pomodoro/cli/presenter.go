@@ -20,7 +20,7 @@ func New(m *model.AppModel) *Presenter {
 
 func (p *Presenter) Run() error {
 	fmt.Println("🍅 Pomodoro — simple mode")
-	fmt.Println("Commands: [p] pause/resume  [s] skip  [r] reset  [t] sound  [q] quit")
+	fmt.Println("Commands: [p/<enter>] pause/resume  [s] skip  [r] reset  [t] test sound  [q/ctrl-c] quit")
 	fmt.Println()
 
 	ticker := time.NewTicker(time.Second)
@@ -48,7 +48,7 @@ func (p *Presenter) Run() error {
 				p.clearLine()
 				fmt.Printf("✓  %s\n", p.m.Notification())
 				if p.m.Cfg().SoundEnabled {
-					fmt.Print("\a")
+					beep(p.m.Cfg())
 				}
 				if p.m.AutoStart() {
 					p.m.Start()
@@ -73,7 +73,7 @@ func (p *Presenter) Run() error {
 				p.m.Reset()
 			case "t":
 				if p.m.Cfg().SoundEnabled {
-					fmt.Print("\a")
+					beep(p.m.Cfg())
 				}
 			}
 			p.printLine()

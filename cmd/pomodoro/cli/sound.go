@@ -1,4 +1,4 @@
-package tuitea
+package cli
 
 import (
 	"os/exec"
@@ -7,21 +7,19 @@ import (
 	"pomodoro/cmd/pomodoro/model"
 )
 
-// beep plays a notification sound asynchronously.
 func beep(cfg model.Config) {
 	go playSound(cfg)
 }
 
 func playSound(cfg model.Config) {
 	if cfg.SoundFile != "" {
-		if played := playFile(cfg.SoundFile); played {
+		if playFile(cfg.SoundFile) {
 			return
 		}
 	}
 
 	switch runtime.GOOS {
 	case "darwin":
-		// osascript is the most reliable beep on macOS regardless of version
 		if exec.Command("osascript", "-e", "beep").Run() == nil {
 			return
 		}
