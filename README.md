@@ -2,37 +2,32 @@
 
 A dead-simple Pomodoro timer for the terminal.
 
-- Work / short break / long break cycle
-- Auto-start between phases (configurable)
-- Embedded notification sound (no external files needed)
-- Custom sound file override
-- Zero runtime dependencies — pure Go stdlib
+```
+% ./bin/pomodoro
+🍅 Dead simple Pomodoro
+Commands: [p/<enter>] pause/resume  [s] skip  [r] reset  [t] test sound  [q/ctrl-c] quit
+
+[Work] 25:00 ⏸  >
+[Work] 24:51 ▶ 00:01→00:26  > s
+[Short break] 04:55 ▶ 00:02→00:06  >
+[Short break] 04:55 ⏸ 00:02→00:07  >
+```
 
 ## Install
 
 **Requirements:** Go 1.21+
 
 ```sh
-git clone https://github.com/yourname/pomodoro
+git clone https://github.com/jblezoray/pomodoro
 cd pomodoro
 make build          # produces bin/pomodoro
 ```
-
-The first `make build` also runs `make sound` automatically to generate and embed the notification chime.
 
 ## Usage
 
 ```sh
 ./bin/pomodoro
 ```
-
-| Key | Action |
-|-----|--------|
-| `p` / `Enter` | Pause / resume |
-| `s` | Skip to next phase |
-| `r` | Reset current phase |
-| `t` | Test notification sound |
-| `q` / `Ctrl-C` | Quit |
 
 The status line shows the current phase, time remaining, and projected start → end times:
 
@@ -64,15 +59,15 @@ Set `sound_file` to an absolute path to override the embedded chime with your ow
 
 ## Make targets
 
-| Target | Description |
-|--------|-------------|
-| `make build` | Build `bin/pomodoro` (generates sound if needed) |
-| `make sound` | Regenerate the embedded notification chime |
-| `make run` | `go run` without producing a binary |
-| `make linux` | Cross-compile for Linux amd64 |
-| `make darwin-arm` | Cross-compile for macOS arm64 |
-| `make darwin-amd` | Cross-compile for macOS amd64 |
-| `make clean` | Remove `bin/` and the generated sound asset |
+| Target            | Description                                      |
+| ----------------- | ------------------------------------------------ |
+| `make build`      | Build `bin/pomodoro` (generates sound if needed) |
+| `make sound`      | Regenerate the embedded notification chime       |
+| `make run`        | `go run` without producing a binary              |
+| `make linux`      | Cross-compile for Linux amd64                    |
+| `make darwin-arm` | Cross-compile for macOS arm64                    |
+| `make darwin-amd` | Cross-compile for macOS amd64                    |
+| `make clean`      | Remove `bin/` and the generated sound asset      |
 
 ## License
 
