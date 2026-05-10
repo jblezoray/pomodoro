@@ -1,5 +1,7 @@
 # pomodoro
 
+[![CI](https://github.com/jblezoray/pomodoro/actions/workflows/ci.yml/badge.svg)](https://github.com/jblezoray/pomodoro/actions/workflows/ci.yml)
+
 A dead-simple Pomodoro timer for the terminal.
 
 ```
