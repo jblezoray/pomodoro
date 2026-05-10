@@ -18,12 +18,12 @@ const (
 	phaseLongBreak
 )
 
-// largeur intérieure fixe du panneau (hors bordure et padding)
+// fixed inner width of the panel (excluding border and padding)
 const panelWidth = 44
 
 type tickMsg time.Time
 
-// styles statiques (créés une fois)
+// static styles (created once)
 var (
 	styleDim   = lipgloss.NewStyle().Foreground(lipgloss.Color("#555555"))
 	styleKey   = lipgloss.NewStyle().Foreground(lipgloss.Color("#EEEEEE")).Background(lipgloss.Color("#2A2A2A")).Padding(0, 1)
@@ -39,11 +39,11 @@ var (
 	colorLong  = lipgloss.Color("#4EA8E0")
 
 	shortcutsBar = lipgloss.JoinHorizontal(lipgloss.Top,
-		styleKey.Render("ESPACE"), styleDesc.Render(" Start/Pause  "),
-		styleKey.Render("S"), styleDesc.Render(" Session suiv.  "),
+		styleKey.Render("SPACE"), styleDesc.Render(" Start/Pause  "),
+		styleKey.Render("S"), styleDesc.Render(" Next session  "),
 		styleKey.Render("R"), styleDesc.Render(" Reset  "),
-		styleKey.Render("T"), styleDesc.Render(" Test son  "),
-		styleKey.Render("Q"), styleDesc.Render(" Quitter"),
+		styleKey.Render("T"), styleDesc.Render(" Test sound  "),
+		styleKey.Render("Q"), styleDesc.Render(" Quit"),
 	)
 )
 
@@ -164,16 +164,16 @@ func (m *model) advancePhase() {
 		if m.pomodoroCount%m.cfg.PomodorosBeforeLongBreak == 0 {
 			m.phase = phaseLongBreak
 			m.total = time.Duration(m.cfg.LongBreak) * time.Minute
-			m.notification = "Grande pause ! Reposez-vous bien."
+			m.notification = "Long break! Rest well."
 		} else {
 			m.phase = phaseShortBreak
 			m.total = time.Duration(m.cfg.ShortBreak) * time.Minute
-			m.notification = "Pause courte méritée !"
+			m.notification = "Short break, you earned it!"
 		}
 	case phaseShortBreak, phaseLongBreak:
 		m.phase = phaseWork
 		m.total = time.Duration(m.cfg.WorkDuration) * time.Minute
-		m.notification = "Au travail !"
+		m.notification = "Back to work!"
 	}
 	m.remaining = m.total
 }
@@ -217,11 +217,9 @@ func (m model) phaseLabel() string {
 	return ""
 }
 
-// ── View ────────────────────────────────────────────────────────────────────
-
 func (m model) View() string {
 	if m.width == 0 {
-		return "Initialisation..."
+		return "Loading..."
 	}
 
 	ac := m.accent()
@@ -231,10 +229,10 @@ func (m model) View() string {
 		return lipgloss.PlaceHorizontal(panelWidth, lipgloss.Center, s)
 	}
 
-	// ── Titre ────────────────────────────────────────────────────────────────
+	// Title
 	title := ac.Render("🍅  POMODORO TIMER")
 
-	// ── Phase + dots ─────────────────────────────────────────────────────────
+	// Phase + dots
 	phaseIcon := "⚡"
 	if m.phase != phaseWork {
 		phaseIcon = "☕"
@@ -257,44 +255,44 @@ func (m model) View() string {
 	cycleStr := styleDim.Render(fmt.Sprintf("   cycle %d", (m.pomodoroCount/total)+1))
 	dotsLine := dotsBuf.String() + cycleStr
 
-	// ── Horloge ──────────────────────────────────────────────────────────────
+	// Clock
 	mins := int(m.remaining.Minutes())
 	secs := int(m.remaining.Seconds()) % 60
 	bigRows := renderBigTime(fmt.Sprintf("%02d:%02d", mins, secs))
 
-	// ── Barre de progression ──────────────────────────────────────────────────
+	// Progress bar
 	var pct float64
 	if m.total > 0 {
 		pct = float64(m.total-m.remaining) / float64(m.total)
 	}
 	progressBar := m.progress.ViewAs(pct)
 
-	// ── Statut ────────────────────────────────────────────────────────────────
+	// Status
 	var statusLine string
 	if m.running {
-		statusLine = ac.Render("▶  En cours")
+		statusLine = ac.Render("▶  Running")
 	} else {
-		statusLine = styleDim.Render("⏸  En pause")
+		statusLine = styleDim.Render("⏸  Paused")
 	}
 
-	// ── Info prochaine pause ──────────────────────────────────────────────────
+	// Next break info
 	nextInfo := ""
 	if m.phase == phaseWork {
 		if m.pomodoroCount > 0 && m.pomodoroCount%total == 0 {
-			nextInfo = styleDim.Render(fmt.Sprintf("→  grande pause (%dm)", m.cfg.LongBreak))
+			nextInfo = styleDim.Render(fmt.Sprintf("→  long break (%dm)", m.cfg.LongBreak))
 		} else {
 			left := total - (m.pomodoroCount % total)
-			nextInfo = styleDim.Render(fmt.Sprintf("→  grande pause dans %d pomodoro(s)", left))
+			nextInfo = styleDim.Render(fmt.Sprintf("→  long break in %d pomodoro(s)", left))
 		}
 	}
 
-	// ── Notification ─────────────────────────────────────────────────────────
+	// Notification
 	notif := ""
 	if m.notification != "" {
 		notif = styleNotif.Render("✦  " + m.notification)
 	}
 
-	// ── Contenu du panneau ────────────────────────────────────────────────────
+	// Panel content
 	divider := styleDim.Render(strings.Repeat("╌", panelWidth-2))
 
 	rows := []string{
@@ -327,7 +325,7 @@ func (m model) View() string {
 		Width(panelWidth).
 		Render(strings.Join(rows, "\n"))
 
-	// ── Assemblage final ──────────────────────────────────────────────────────
+	// Final assembly
 	block := lipgloss.JoinVertical(lipgloss.Center,
 		panel,
 		"",

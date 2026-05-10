@@ -6,9 +6,9 @@ import (
 	"runtime"
 )
 
-// beep joue un son de notification.
-// Si cfg.SoundFile est renseigné, on tente de le jouer via le lecteur natif.
-// Sinon on utilise le son système par défaut, puis le bell terminal.
+// beep plays a notification sound.
+// If cfg.SoundFile is set, it tries to play it via the native player.
+// Otherwise it falls back to the system default sound, then the terminal bell.
 func beep(cfg Config) {
 	if cfg.SoundFile != "" {
 		var cmd *exec.Cmd
@@ -16,7 +16,7 @@ func beep(cfg Config) {
 		case "darwin":
 			cmd = exec.Command("afplay", cfg.SoundFile)
 		case "linux":
-			// tente paplay puis aplay
+			// try paplay then aplay
 			if err := exec.Command("paplay", cfg.SoundFile).Start(); err == nil {
 				return
 			}
@@ -29,7 +29,7 @@ func beep(cfg Config) {
 		}
 	}
 
-	// son système par défaut
+	// system default sound
 	switch runtime.GOOS {
 	case "darwin":
 		if err := exec.Command("afplay", "/System/Library/Sounds/Blow.aiff").Start(); err == nil {
