@@ -1,4 +1,4 @@
-package main
+package model
 
 import (
 	"encoding/json"
@@ -20,20 +20,18 @@ type Config struct {
 	LongBreakLabel           string `json:"long_break_label"`
 }
 
-var defaultConfig = Config{
+var Default = Config{
 	WorkDuration:             25,
 	ShortBreak:               5,
 	LongBreak:                15,
 	PomodorosBeforeLongBreak: 4,
-	AutoStartBreaks:          false,
-	AutoStartPomodoros:       false,
 	SoundEnabled:             true,
-	WorkLabel:                "Travail",
-	ShortBreakLabel:          "Pause courte",
-	LongBreakLabel:           "Grande pause",
+	WorkLabel:                "Work",
+	ShortBreakLabel:          "Short break",
+	LongBreakLabel:           "Long break",
 }
 
-func loadConfig() Config {
+func Load() Config {
 	candidates := []string{"pomodoro.json"}
 	if home, err := os.UserHomeDir(); err == nil {
 		candidates = append(candidates,
@@ -41,7 +39,6 @@ func loadConfig() Config {
 			filepath.Join(home, ".config", "pomodoro", "config.json"),
 		)
 	}
-
 	for _, path := range candidates {
 		data, err := os.ReadFile(path)
 		if err != nil {
@@ -54,29 +51,29 @@ func loadConfig() Config {
 		applyDefaults(&cfg)
 		return cfg
 	}
-	return defaultConfig
+	return Default
 }
 
 func applyDefaults(cfg *Config) {
 	if cfg.WorkDuration == 0 {
-		cfg.WorkDuration = defaultConfig.WorkDuration
+		cfg.WorkDuration = Default.WorkDuration
 	}
 	if cfg.ShortBreak == 0 {
-		cfg.ShortBreak = defaultConfig.ShortBreak
+		cfg.ShortBreak = Default.ShortBreak
 	}
 	if cfg.LongBreak == 0 {
-		cfg.LongBreak = defaultConfig.LongBreak
+		cfg.LongBreak = Default.LongBreak
 	}
 	if cfg.PomodorosBeforeLongBreak == 0 {
-		cfg.PomodorosBeforeLongBreak = defaultConfig.PomodorosBeforeLongBreak
+		cfg.PomodorosBeforeLongBreak = Default.PomodorosBeforeLongBreak
 	}
 	if cfg.WorkLabel == "" {
-		cfg.WorkLabel = defaultConfig.WorkLabel
+		cfg.WorkLabel = Default.WorkLabel
 	}
 	if cfg.ShortBreakLabel == "" {
-		cfg.ShortBreakLabel = defaultConfig.ShortBreakLabel
+		cfg.ShortBreakLabel = Default.ShortBreakLabel
 	}
 	if cfg.LongBreakLabel == "" {
-		cfg.LongBreakLabel = defaultConfig.LongBreakLabel
+		cfg.LongBreakLabel = Default.LongBreakLabel
 	}
 }

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"pomodoro/cmd/pomodoro/model"
+
 	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -49,39 +51,39 @@ func NewPanelRenderer() *PanelRenderer {
 	return &PanelRenderer{progress: p}
 }
 
-func (r *PanelRenderer) accent(p Phase) lipgloss.Style {
+func (r *PanelRenderer) accent(p model.Phase) lipgloss.Style {
 	switch p {
-	case PhaseShortBreak:
+	case model.PhaseShortBreak:
 		return styleAccentShort
-	case PhaseLongBreak:
+	case model.PhaseLongBreak:
 		return styleAccentLong
 	}
 	return styleAccentWork
 }
 
-func (r *PanelRenderer) color(p Phase) lipgloss.Color {
+func (r *PanelRenderer) color(p model.Phase) lipgloss.Color {
 	switch p {
-	case PhaseShortBreak:
+	case model.PhaseShortBreak:
 		return colorShort
-	case PhaseLongBreak:
+	case model.PhaseLongBreak:
 		return colorLong
 	}
 	return colorWork
 }
 
-func (r *PanelRenderer) phaseLabel(s State) string {
+func (r *PanelRenderer) phaseLabel(s model.State) string {
 	switch s.Phase {
-	case PhaseWork:
+	case model.PhaseWork:
 		return s.WorkLabel
-	case PhaseShortBreak:
+	case model.PhaseShortBreak:
 		return s.ShortBreakLabel
-	case PhaseLongBreak:
+	case model.PhaseLongBreak:
 		return s.LongBreakLabel
 	}
 	return ""
 }
 
-func (r *PanelRenderer) Render(s State) string {
+func (r *PanelRenderer) Render(s model.State) string {
 	if s.Width == 0 {
 		return "Loading..."
 	}
@@ -98,7 +100,7 @@ func (r *PanelRenderer) Render(s State) string {
 
 	// Phase + dots
 	phaseIcon := "⚡"
-	if s.Phase != PhaseWork {
+	if s.Phase != model.PhaseWork {
 		phaseIcon = "☕"
 	}
 	phaseLine := ac.Render(phaseIcon + "  " + strings.ToUpper(r.phaseLabel(s)))
@@ -141,7 +143,7 @@ func (r *PanelRenderer) Render(s State) string {
 
 	// Next break info
 	nextInfo := ""
-	if s.Phase == PhaseWork {
+	if s.Phase == model.PhaseWork {
 		if s.PomodoroCount > 0 && s.PomodoroCount%total == 0 {
 			nextInfo = styleDim.Render(fmt.Sprintf("→  long break (%dm)", s.LongBreak))
 		} else {

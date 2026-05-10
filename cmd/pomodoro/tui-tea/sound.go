@@ -1,15 +1,17 @@
-package main
+package tuitea
 
 import (
 	"fmt"
 	"os/exec"
 	"runtime"
+
+	"pomodoro/cmd/pomodoro/model"
 )
 
 // beep plays a notification sound.
 // If cfg.SoundFile is set, it tries to play it via the native player.
 // Otherwise it falls back to the system default sound, then the terminal bell.
-func beep(cfg Config) {
+func beep(cfg model.Config) {
 	if cfg.SoundFile != "" {
 		var cmd *exec.Cmd
 		switch runtime.GOOS {

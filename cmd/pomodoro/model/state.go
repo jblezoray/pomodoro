@@ -1,17 +1,8 @@
-package tuitea
+package model
 
 import "time"
 
-// Phase represents the current timer phase.
-type Phase int
-
-const (
-	PhaseWork Phase = iota
-	PhaseShortBreak
-	PhaseLongBreak
-)
-
-// State is a read-only snapshot of the model passed to the renderer.
+// State is a read-only snapshot passed to the renderer.
 type State struct {
 	Phase         Phase
 	Remaining     time.Duration
@@ -32,4 +23,9 @@ type State struct {
 // Renderer renders a State to a terminal string.
 type Renderer interface {
 	Render(State) string
+}
+
+// Presenter runs the application UI loop.
+type Presenter interface {
+	Run() error
 }
