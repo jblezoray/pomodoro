@@ -9,7 +9,7 @@ import (
 	"pomodoro/cmd/pomodoro/model"
 )
 
-//go:embed sounds/done.aiff
+//go:embed sounds/done.wav
 var embeddedSound []byte
 
 func beep(cfg model.Config) {

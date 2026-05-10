@@ -1,6 +1,6 @@
 BINARY    := pomodoro
 BIN       := bin
-SOUND_SRC := cmd/pomodoro/cli/sounds/done.aiff
+SOUND_SRC := cmd/pomodoro/cli/sounds/done.wav
 
 .PHONY: build run sound clean linux darwin-arm darwin-amd
 
@@ -14,7 +14,7 @@ run: $(SOUND_SRC)
 sound: $(SOUND_SRC)
 
 $(SOUND_SRC):
-	python3 scripts/gen_sound.py
+	go run scripts/gen_sound.go
 
 linux: $(SOUND_SRC)
 	mkdir -p $(BIN)
