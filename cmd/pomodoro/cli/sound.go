@@ -20,17 +20,18 @@ func playSound(cfg model.Config) {
 
 	switch runtime.GOOS {
 	case "darwin":
-		if exec.Command("osascript", "-e", "beep").Run() == nil {
-			return
-		}
 		for _, f := range []string{
-			"/System/Library/Sounds/Ping.aiff",
-			"/System/Library/Sounds/Tink.aiff",
+			"/System/Library/Sounds/Glass.aiff",
 			"/System/Library/Sounds/Blow.aiff",
+			"/System/Library/Sounds/Tink.aiff",
+			"/System/Library/Sounds/Ping.aiff",
 		} {
 			if exec.Command("afplay", f).Run() == nil {
 				return
 			}
+		}
+		if exec.Command("osascript", "-e", "beep").Run() == nil {
+			return
 		}
 	case "linux":
 		for _, args := range [][]string{
