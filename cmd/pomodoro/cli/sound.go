@@ -1,11 +1,16 @@
 package cli
 
 import (
+	_ "embed"
+	"os"
 	"os/exec"
 	"runtime"
 
 	"pomodoro/cmd/pomodoro/model"
 )
+
+//go:embed sounds/done.aiff
+var embeddedSound []byte
 
 func beep(cfg model.Config) {
 	go playSound(cfg)
@@ -17,21 +22,19 @@ func playSound(cfg model.Config) {
 			return
 		}
 	}
-
+	if playEmbedded() {
+		return
+	}
 	switch runtime.GOOS {
 	case "darwin":
 		for _, f := range []string{
 			"/System/Library/Sounds/Glass.aiff",
-			"/System/Library/Sounds/Blow.aiff",
-			"/System/Library/Sounds/Tink.aiff",
 			"/System/Library/Sounds/Ping.aiff",
+			"/System/Library/Sounds/Tink.aiff",
 		} {
 			if exec.Command("afplay", f).Run() == nil {
 				return
 			}
-		}
-		if exec.Command("osascript", "-e", "beep").Run() == nil {
-			return
 		}
 	case "linux":
 		for _, args := range [][]string{
@@ -43,6 +46,20 @@ func playSound(cfg model.Config) {
 			}
 		}
 	}
+}
+
+func playEmbedded() bool {
+	tmp, err := os.CreateTemp("", "pomodoro-*.aiff")
+	if err != nil {
+		return false
+	}
+	defer os.Remove(tmp.Name())
+	if _, err := tmp.Write(embeddedSound); err != nil {
+		tmp.Close()
+		return false
+	}
+	tmp.Close()
+	return playFile(tmp.Name())
 }
 
 func playFile(path string) bool {
