@@ -11,7 +11,8 @@ import (
 )
 
 type Presenter struct {
-	m *model.AppModel
+	m              *model.AppModel
+	phaseStartedAt time.Time
 }
 
 func New(m *model.AppModel) *Presenter {
@@ -19,83 +20,116 @@ func New(m *model.AppModel) *Presenter {
 }
 
 func (p *Presenter) Run() error {
-	fmt.Println("🍅 Pomodoro — simple mode")
+	fmt.Println("🍅 Dead simple Pomodoro")
 	fmt.Println("Commands: [p/<enter>] pause/resume  [s] skip  [r] reset  [t] test sound  [q/ctrl-c] quit")
 	fmt.Println()
 
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
-	// input goroutine only reads stdin — all model access stays in the select loop
-	input := make(chan string)
-	go func() {
-		scanner := bufio.NewScanner(os.Stdin)
-		for scanner.Scan() {
-			input <- scanner.Text()
-		}
-		close(input)
-	}()
-
+	input := readStdin()
 	p.printLine()
 
 	for {
 		select {
 		case <-ticker.C:
-			if !p.m.Running() {
-				continue
-			}
-			if phaseEnded := p.m.Tick(); phaseEnded {
-				p.clearLine()
-				fmt.Printf("✓  %s\n", p.m.Notification())
-				if p.m.Cfg().SoundEnabled {
-					beep(p.m.Cfg())
-				}
-				if p.m.AutoStart() {
-					p.m.Start()
-				}
-			}
-			p.printLine()
-
+			p.onTick()
 		case line, ok := <-input:
 			if !ok {
 				return nil
 			}
-			p.clearLine()
-			switch strings.TrimSpace(strings.ToLower(line)) {
-			case "q", "quit":
-				fmt.Println("Bye.")
+			if quit := p.onInput(line); quit {
 				return nil
-			case "p", "":
-				p.m.TogglePause()
-			case "s":
-				p.m.Skip()
-			case "r":
-				p.m.Reset()
-			case "t":
-				if p.m.Cfg().SoundEnabled {
-					beep(p.m.Cfg())
-				}
 			}
-			p.printLine()
 		}
 	}
 }
 
-// printLine rewrites the current terminal line with status + prompt.
-func (p *Presenter) printLine() {
-	m := p.m
-	mins := int(m.Remaining().Minutes())
-	secs := int(m.Remaining().Seconds()) % 60
-	icon := "⏸"
-	if m.Running() {
-		icon = "▶"
+func (p *Presenter) onTick() {
+	if !p.m.Running() {
+		return
 	}
-	fmt.Printf("\r[%s] %02d:%02d %s  > ", phaseLabel(m.Phase()), mins, secs, icon)
+	if p.phaseStartedAt.IsZero() {
+		p.phaseStartedAt = time.Now()
+	}
+	if p.m.Tick() {
+		p.clearLine()
+		fmt.Printf("✓  %s\n", p.m.Notification())
+		if p.m.Cfg().SoundEnabled {
+			beep(p.m.Cfg())
+		}
+		p.phaseStartedAt = time.Time{}
+		if p.m.AutoStart() {
+			p.m.Start()
+			p.phaseStartedAt = time.Now()
+		}
+	}
+	p.printLine()
 }
 
-// clearLine erases the current terminal line.
+func (p *Presenter) onInput(line string) (quit bool) {
+	p.clearLine()
+	switch strings.TrimSpace(strings.ToLower(line)) {
+	case "q", "quit":
+		fmt.Println("Bye.")
+		return true
+	case "p", "":
+		freshStart := !p.m.Running() && p.m.Remaining() == p.m.Total()
+		if p.m.TogglePause() {
+			if freshStart {
+				p.phaseStartedAt = time.Now()
+				if p.m.Cfg().SoundEnabled {
+					beep(p.m.Cfg())
+				}
+			}
+		}
+	case "s":
+		p.m.Skip()
+		p.phaseStartedAt = time.Now()
+		if p.m.Cfg().SoundEnabled {
+			beep(p.m.Cfg())
+		}
+	case "r":
+		p.m.Reset()
+		p.phaseStartedAt = time.Time{}
+	case "t":
+		if p.m.Cfg().SoundEnabled {
+			beep(p.m.Cfg())
+		}
+	}
+	p.printLine()
+	return false
+}
+
+func readStdin() <-chan string {
+	ch := make(chan string)
+	go func() {
+		scanner := bufio.NewScanner(os.Stdin)
+		for scanner.Scan() {
+			ch <- scanner.Text()
+		}
+		close(ch)
+	}()
+	return ch
+}
+
+func (p *Presenter) printLine() {
+	mins := int(p.m.Remaining().Minutes())
+	secs := int(p.m.Remaining().Seconds()) % 60
+	icon := "⏸"
+	if p.m.Running() {
+		icon = "▶"
+	}
+	timeRange := ""
+	if !p.phaseStartedAt.IsZero() {
+		endAt := time.Now().Add(p.m.Remaining())
+		timeRange = fmt.Sprintf(" %s→%s", p.phaseStartedAt.Format("15:04"), endAt.Format("15:04"))
+	}
+	fmt.Printf("\r[%s] %02d:%02d %s%s  > ", phaseLabel(p.m.Phase()), mins, secs, icon, timeRange)
+}
+
 func (p *Presenter) clearLine() {
-	fmt.Printf("\r%s\r", strings.Repeat(" ", 60))
+	fmt.Printf("\r%s\r", strings.Repeat(" ", 80))
 }
 
 func phaseLabel(p model.Phase) string {

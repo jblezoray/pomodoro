@@ -25,6 +25,8 @@ var Default = Config{
 	ShortBreak:               5,
 	LongBreak:                15,
 	PomodorosBeforeLongBreak: 4,
+	AutoStartBreaks:          true,
+	AutoStartPomodoros:       true,
 	SoundEnabled:             true,
 	WorkLabel:                "Work",
 	ShortBreakLabel:          "Short break",
