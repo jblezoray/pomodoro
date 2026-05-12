@@ -24,7 +24,14 @@ func (p *Presenter) Run() error {
 	fmt.Println("Commands: [p/<enter>] pause/resume  [s] skip  [r] reset  [t] test sound  [q/ctrl-c] quit")
 	fmt.Println()
 
-	ticker := time.NewTicker(time.Second)
+	tickInterval := time.Second
+	for _, arg := range os.Args[1:] {
+		if arg == "--fast" {
+			tickInterval = time.Second / 60
+			break
+		}
+	}
+	ticker := time.NewTicker(tickInterval)
 	defer ticker.Stop()
 
 	input := readStdin()
@@ -65,6 +72,7 @@ func (p *Presenter) onTick() {
 			if p.m.Cfg().SoundEnabled {
 				beepStart(p.m.Cfg())
 			}
+			p.printPhaseStart()
 		}
 	}
 	p.printLine()
@@ -84,6 +92,7 @@ func (p *Presenter) onInput(line string) (quit bool) {
 				if p.m.Cfg().SoundEnabled {
 					beepStart(p.m.Cfg())
 				}
+				p.printPhaseStart()
 			}
 		}
 	case "s":
@@ -92,6 +101,7 @@ func (p *Presenter) onInput(line string) (quit bool) {
 		if p.m.Cfg().SoundEnabled {
 			beepStart(p.m.Cfg())
 		}
+		p.printPhaseStart()
 	case "r":
 		p.m.Reset()
 		p.phaseStartedAt = time.Time{}
@@ -114,6 +124,11 @@ func readStdin() <-chan string {
 		close(ch)
 	}()
 	return ch
+}
+
+func (p *Presenter) printPhaseStart() {
+	endAt := time.Now().Add(p.m.Remaining())
+	fmt.Printf("▶ [%s] %s→%s\n", phaseLabel(p.m.Phase()), p.phaseStartedAt.Format("15:04"), endAt.Format("15:04"))
 }
 
 func (p *Presenter) printLine() {
