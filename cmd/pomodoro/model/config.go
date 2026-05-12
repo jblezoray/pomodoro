@@ -35,6 +35,9 @@ var Default = Config{
 
 func Load() Config {
 	candidates := []string{"pomodoro.json"}
+	if exe, err := os.Executable(); err == nil {
+		candidates = append(candidates, filepath.Join(filepath.Dir(exe), "pomodoro.json"))
+	}
 	if home, err := os.UserHomeDir(); err == nil {
 		candidates = append(candidates,
 			filepath.Join(home, ".pomodoro.json"),
