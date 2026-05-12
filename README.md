@@ -73,4 +73,4 @@ Set `sound_file` to an absolute path to override the embedded chime with your ow
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+LGPL-3.0 license — see [LICENSE](LICENSE).
