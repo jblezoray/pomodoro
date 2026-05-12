@@ -131,14 +131,14 @@ func (p *Presenter) printPhaseStart() {
 func (p *Presenter) printLine() {
 	mins := int(p.m.Remaining().Minutes())
 	secs := int(p.m.Remaining().Seconds()) % 60
-	icon := "⏸"
+	icon := " "
 	if p.m.Running() {
 		icon = "▶"
 	}
 	timeRange := ""
 	if !p.phaseStartedAt.IsZero() {
 		endAt := time.Now().Add(p.m.Remaining())
-		timeRange = fmt.Sprintf(" %s→%s", p.phaseStartedAt.Format("15:04"), endAt.Format("15:04"))
+		timeRange = fmt.Sprintf(" %s-%s", p.phaseStartedAt.Format("15:04"), endAt.Format("15:04"))
 	}
 	fmt.Printf("\r[%s] %02d:%02d %s%s  > ", phaseLabel(p.m.Phase()), mins, secs, icon, timeRange)
 }
