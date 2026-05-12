@@ -69,9 +69,6 @@ func (p *Presenter) onTick() {
 		if p.m.AutoStart() {
 			p.m.Start()
 			p.phaseStartedAt = time.Now()
-			if p.m.Cfg().SoundEnabled {
-				beepStart(p.m.Cfg())
-			}
 			p.printPhaseStart()
 		}
 	}
