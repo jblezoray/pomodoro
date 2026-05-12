@@ -10,19 +10,26 @@ import (
 )
 
 //go:embed sounds/done.wav
-var embeddedSound []byte
+var soundDone []byte
+
+//go:embed sounds/start.wav
+var soundStart []byte
 
 func beep(cfg model.Config) {
-	go playSound(cfg)
+	go playSound(cfg, soundDone)
 }
 
-func playSound(cfg model.Config) {
+func beepStart(cfg model.Config) {
+	go playSound(cfg, soundStart)
+}
+
+func playSound(cfg model.Config, embedded []byte) {
 	if cfg.SoundFile != "" {
 		if playFile(cfg.SoundFile) {
 			return
 		}
 	}
-	if playEmbedded() {
+	if playEmbedded(embedded) {
 		return
 	}
 	switch runtime.GOOS {
@@ -48,13 +55,13 @@ func playSound(cfg model.Config) {
 	}
 }
 
-func playEmbedded() bool {
-	tmp, err := os.CreateTemp("", "pomodoro-*.aiff")
+func playEmbedded(data []byte) bool {
+	tmp, err := os.CreateTemp("", "pomodoro-*.wav")
 	if err != nil {
 		return false
 	}
 	defer os.Remove(tmp.Name())
-	if _, err := tmp.Write(embeddedSound); err != nil {
+	if _, err := tmp.Write(data); err != nil {
 		tmp.Close()
 		return false
 	}

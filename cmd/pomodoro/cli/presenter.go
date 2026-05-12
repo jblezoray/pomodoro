@@ -62,6 +62,9 @@ func (p *Presenter) onTick() {
 		if p.m.AutoStart() {
 			p.m.Start()
 			p.phaseStartedAt = time.Now()
+			if p.m.Cfg().SoundEnabled {
+				beepStart(p.m.Cfg())
+			}
 		}
 	}
 	p.printLine()
@@ -79,7 +82,7 @@ func (p *Presenter) onInput(line string) (quit bool) {
 			if freshStart {
 				p.phaseStartedAt = time.Now()
 				if p.m.Cfg().SoundEnabled {
-					beep(p.m.Cfg())
+					beepStart(p.m.Cfg())
 				}
 			}
 		}
@@ -87,7 +90,7 @@ func (p *Presenter) onInput(line string) (quit bool) {
 		p.m.Skip()
 		p.phaseStartedAt = time.Now()
 		if p.m.Cfg().SoundEnabled {
-			beep(p.m.Cfg())
+			beepStart(p.m.Cfg())
 		}
 	case "r":
 		p.m.Reset()
